@@ -4,10 +4,16 @@ import documentsRoutes from './src/Routes/documentsRoutes.mjs'
 import documents from './src/Metadata/documentData.mjs';
 import mongoose from 'mongoose';
 import  Document  from './src/Schemas/documentSchema.mjs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app=express();
 const port=5000;
 app.use(express.json());
 app.use(cors())
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connection
 
@@ -28,6 +34,10 @@ db.once('open', async () => {
 })
 
 app.use('/api/documents',documentsRoutes)
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 app.listen(port,()=>{
     console.log(`Server is running on port ${port}`)
 });
