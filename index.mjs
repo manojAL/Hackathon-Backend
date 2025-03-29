@@ -8,7 +8,7 @@ import fs from 'fs';
 // Import routes
 import documentsRoutes from './src/Routes/documentsRoutes.mjs';
 import caseRoutes from './src/Routes/caseRoutes.mjs';
-
+import dashboardRoutes from './src/Routes/dashboardRoutes.mjs'
 // Import schemas
 import Document from './src/Schemas/documentSchema.mjs';
 import Case from './src/Schemas/caseSchema.mjs';
@@ -83,7 +83,7 @@ const initializeCollections = async () => {
 // Routes
 app.use('/api/documents', documentsRoutes);
 app.use('/api/cases', caseRoutes);
-
+app.use('/api/dashboard',dashboardRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
