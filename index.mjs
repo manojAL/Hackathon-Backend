@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 // Import routes
+import authRoutes from './src/Routes/authRoutes.mjs'
 import documentsRoutes from './src/Routes/documentsRoutes.mjs';
 import caseRoutes from './src/Routes/caseRoutes.mjs';
 import dashboardRoutes from './src/Routes/dashboardRoutes.mjs'
@@ -81,6 +82,7 @@ const initializeCollections = async () => {
 };
 
 // Routes
+app.use('/api/auth',authRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/dashboard',dashboardRoutes);
