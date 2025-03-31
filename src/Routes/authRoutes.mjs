@@ -98,24 +98,108 @@ router.post('/logout', async (req, res) => {
 });
 
 // Update user profile (for settings)
+// Update user profile (for settings)
 router.put('/profile', async (req, res) => {
-  try {
-    const { userId, department, position, phoneNumber } = req.body;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { department, position, phoneNumber },
-      { new: true }
-    ).select('-password');
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+    try {
+      // 1. Verify Authorization
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) {
+        return res.status(401).json({ message: 'Authorization token required' });
+      }
+  
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      
+      // 2. Get data from request
+      const { userId, department, position, phoneNumber } = req.body;
+  
+      // 3. Validate userId matches token
+      if (userId !== decoded.userId) {
+        return res.status(403).json({ message: 'Not authorized to update this profile' });
+      }
+  
+      // 4. Check if user exists
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      // 5. Prepare update data
+      const updateData = {};
+      if (department !== undefined) updateData.department = department;
+      if (position !== undefined) updateData.position = position;
+      if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+  
+      // 6. Check if anything to update
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ 
+          message: 'No changes provided',
+          currentData: {
+            department: user.department,
+            position: user.position,
+            phoneNumber: user.phoneNumber
+          }
+        });
+      }
+  
+      // 7. Perform update
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        updateData,
+        { new: true, runValidators: true }
+      ).select('-password');
+  
+      // 8. Return success
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        user: updatedUser
+      });
+  
+    } catch (error) {
+      console.error('Profile update error:', error);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+      
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ 
+          message: 'Validation failed',
+          details: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: 'Failed to update profile',
+        error: error.message 
+      });
     }
-
-    res.json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+  });
+  // Add this to your backend routes
+router.get('/profile/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const token = req.headers.authorization?.split(' ')[1];
+  
+      // Verify token
+      if (!token) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+  
+      jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+  
+      // Get user data
+      const user = await User.findById(userId).select('-password');
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      res.json({ user });
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
 export default router;
